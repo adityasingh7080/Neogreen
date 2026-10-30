@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import axios from "axios";
 
 export default function OffsetSimulatorPage() {
   const [emissions, setEmissions] = useState("500");
@@ -10,6 +9,7 @@ export default function OffsetSimulatorPage() {
   const [credits, setCredits] = useState("200");
   const [loading, setLoading] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [error, setError] = useState("");
   const [result, setResult] = useState<any>({
     current_emissions: 500,
     reforestation_offset: 44,
@@ -25,34 +25,50 @@ export default function OffsetSimulatorPage() {
     setIsMounted(true);
   }, []);
 
-  const handleCalculate = (e: React.FormEvent) => {
-  e.preventDefault();
-  setLoading(true);
-  setError("");
+  const handleSimulate = (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
 
-  try {
-    // GHG Protocol standard calculation factors
-    const scope1_kg = Number(diesel) * 2.68 + Number(vehicleKm) * 0.21;
-    const scope2_kg = Number(electricity) * 0.85;
-    const scope3_kg = Number(flightHours) * 90 + Number(commuteKm) * 0.17 + Number(wasteKg) * 0.5;
+    try {
+      const numEmissions = Number(emissions) || 0;
+      const numTrees = Number(trees) || 0;
+      const numRec = Number(rec) || 0;
+      const numCredits = Number(credits) || 0;
 
-    const total_tonnes = (scope1_kg + scope2_kg + scope3_kg) / 1000;
+      // Offsetting factors:
+      // ~22kg (0.022 t) CO2 absorbed per tree/year
+      // ~0.82 t CO2 offset per MWh REC
+      // 1 t CO2 offset per direct carbon credit
+      const reforestation_offset = Math.round(numTrees * 0.022);
+      const rec_offset = Math.round(numRec * 0.82);
+      const credit_offset = Math.round(numCredits * 1.0);
 
-    setResult({
-      status: "success",
-      total_emissions_tonnes: Number(total_tonnes.toFixed(2)),
-      breakdown: {
-        scope1_tonnes: Number((scope1_kg / 1000).toFixed(2)),
-        scope2_tonnes: Number((scope2_kg / 1000).toFixed(2)),
-        scope3_tonnes: Number((scope3_kg / 1000).toFixed(2)),
-      },
-    });
-  } catch (err: any) {
-    setError("Failed to process calculation.");
-  } finally {
-    setLoading(false);
-  }
-};
+      const total_offset = reforestation_offset + rec_offset + credit_offset;
+      const net_remaining_emissions = Math.max(0, numEmissions - total_offset);
+      const offset_percentage = numEmissions > 0 
+        ? Math.min(100, Math.round((total_offset / numEmissions) * 100))
+        : 100;
+
+      // Cost Factors: $15/tree, $25/MWh REC, $30/Carbon Credit
+      const total_cost = (numTrees * 15) + (numRec * 25) + (numCredits * 30);
+
+      setResult({
+        current_emissions: numEmissions,
+        reforestation_offset,
+        rec_offset,
+        credit_offset,
+        total_offset,
+        net_remaining_emissions,
+        offset_percentage,
+        total_cost,
+      });
+    } catch (err: any) {
+      setError("Failed to process simulation.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const formatNum = (val: number) => {
     if (val === undefined || val === null) return "0";
@@ -74,6 +90,13 @@ export default function OffsetSimulatorPage() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="rounded-xl border border-slate-800 bg-slate-900 p-5 space-y-4">
             <h2 className="text-base font-semibold text-emerald-400">Strategy Inputs</h2>
+            
+            {error && (
+              <div className="rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-xs text-red-400">
+                {error}
+              </div>
+            )}
+
             <form onSubmit={handleSimulate} className="space-y-3 text-xs">
               <div>
                 <label className="block text-slate-300">Target Annual Emissions (t CO₂e)</label>

@@ -5,7 +5,7 @@ from pydantic import BaseModel, EmailStr
 from jose import JWTError, jwt
 
 from app.db.session import get_db
-from app.db.models import User
+from ..db.models import User
 from app.core.security import verify_password, get_password_hash, create_access_token, SECRET_KEY, ALGORITHM
 
 router = APIRouter(prefix="/auth", tags=["auth"])

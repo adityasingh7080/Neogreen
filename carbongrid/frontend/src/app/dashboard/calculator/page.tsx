@@ -48,13 +48,11 @@ export default function CalculatorPage() {
   };
 
   try {
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-    
-    const response = await fetch("https://neogreen-7321.onrender.com/api/v1/calculator/calculate", {
+    // Send request to the local Next.js server route handler
+    const response = await fetch("/api/calculator/calculate", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify(payload),
     });
@@ -66,27 +64,13 @@ export default function CalculatorPage() {
     const data = await response.json();
     setResult(data);
   } catch (err: any) {
-    console.warn("Backend call failed, displaying local calculations:", err);
-    
-    // Fallback calculation directly in frontend
-    const totalCO2 =
-      Number(electricity) * 0.85 +
-      Number(diesel) * 2.68 +
-      Number(vehicleKm) * 0.21 +
-      Number(flightHours) * 90 +
-      Number(commuteKm) * 0.17 +
-      Number(wasteKg) * 0.5;
-
-    setResult({
-      total_emissions_tonnes: (totalCO2 / 1000).toFixed(2),
-      scope1: ((Number(diesel) * 2.68 + Number(vehicleKm) * 0.21) / 1000).toFixed(2),
-      scope2: ((Number(electricity) * 0.85) / 1000).toFixed(2),
-      scope3: ((Number(flightHours) * 90 + Number(commuteKm) * 0.17 + Number(wasteKg) * 0.5) / 1000).toFixed(2),
-    });
+    console.error("Calculation error:", err);
+    setError("Calculation failed. Please try again.");
   } finally {
     setLoading(false);
   }
 };
+
   const exportCSV = () => {
     if (!result) return;
 

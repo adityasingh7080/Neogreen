@@ -1,23 +1,26 @@
-import Link from "next/link";
+import { api } from "@/lib/api";
 
-export default function HomePage() {
-  return (
-    <main className="min-h-screen flex items-center justify-center p-8">
-      <div className="max-w-3xl w-full space-y-6">
-        <p className="text-sm text-emerald-400">CarbonGrid</p>
-        <h1 className="text-5xl font-semibold tracking-tight">
-          Geospatial sustainability intelligence.
-        </h1>
-        <p className="text-zinc-400 max-w-2xl">
-          Analyze projects, carbon emissions, solar potential and sustainability opportunities.
-        </p>
-        <Link
-          href="/dashboard"
-          className="inline-flex rounded-lg bg-white px-5 py-3 text-black font-medium"
-        >
-          Open Dashboard
-        </Link>
-      </div>
-    </main>
-  );
-}
+// Inside your component's submit handler:
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  try {
+    // 1. Explicitly map your form inputs to match the backend schema
+    const payload = {
+      electricity_kwh: Number(formData.electricity_kwh || 0),
+      diesel_liters: Number(formData.diesel_liters || 0),
+      vehicle_km: Number(formData.vehicle_km || 0),
+      flight_hours: Number(formData.flight_hours || 0),
+      employee_commute_km: Number(formData.employee_commute_km || 0),
+      waste_kg: Number(formData.waste_kg || 0)
+    };
+
+    // 2. Call the endpoint relative to baseURL (do NOT add /api/v1 prefix here)
+    const response = await api.post("/calculator/calculate", payload);
+    
+    // 3. Save response to state
+    setResult(response.data);
+  } catch (error) {
+    console.error("Calculation failed:", error);
+  }
+};

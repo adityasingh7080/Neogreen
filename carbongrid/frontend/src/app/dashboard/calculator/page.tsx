@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import axios from "axios";
+import { api } from "@/lib/api";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import {
@@ -39,7 +39,8 @@ export default function CalculatorPage() {
     setError("");
 
     try {
-      const response = await axios.post("http://127.0.0.1:8000/api/v1/calculator/calculate", {
+      // Calls the Render API dynamically using api client setup
+      const response = await api.post("/calculator/calculate", {
         electricity_kwh: Number(electricity),
         diesel_liters: Number(diesel),
         vehicle_km: Number(vehicleKm),

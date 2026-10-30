@@ -17,8 +17,8 @@ app = FastAPI(
 # Allow all origins dynamically without wildcard conflict
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex="https://.*\.vercel\.app|http://localhost:.*|http://127\.0\.0\.1:.*",
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )

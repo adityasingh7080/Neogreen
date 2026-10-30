@@ -63,3 +63,14 @@ app.include_router(offset.router, prefix="/api/v1/offset", tags=["offset"])
 @app.get("/api/health")
 def health_check():
     return {"status": "ok", "app": settings.PROJECT_NAME}
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins for development/testing
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)

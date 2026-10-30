@@ -1,157 +1,193 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
+import { useState, useRef } from "react";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Legend,
+} from "recharts";
 
-export default function DashboardOverviewPage() {
-  const [isMounted, setIsMounted] = useState(false);
+export default function CalculatorPage() {
+  const reportRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+  // Video Form Modal State
+  const [showVideoModal, setShowVideoModal] = useState(false);
 
-  const formatNum = (val: number) => {
-    if (val === undefined || val === null) return "0";
-    return val.toLocaleString("en-US");
+  // Activity Data Inputs
+  const [electricity, setElectricity] = useState(25000);
+  const [diesel, setDiesel] = useState(500);
+  const [vehicleKm, setVehicleKm] = useState(12000);
+  const [flightHours, setFlightHours] = useState(15);
+  const [commuteKm, setCommuteKm] = useState(5000);
+  const [wasteKg, setWasteKg] = useState(800);
+
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<any>(null);
+  const [error, setError] = useState("");
+
+  const handleCalculate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      // Dynamic API fetch target
+      const res = await fetch("https://neogreen-7321.onrender.com/api/v1/calculator/calculate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          electricity_kwh: Number(electricity),
+          diesel_liters: Number(diesel),
+          vehicle_km: Number(vehicleKm),
+          flight_hours: Number(flightHours),
+          employee_commute_km: Number(commuteKm),
+          waste_kg: Number(wasteKg),
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Calculation request failed");
+      }
+
+      const data = await res.json();
+      setResult(data);
+    } catch (err: any) {
+      setError("Failed to calculate footprint. Check inputs.");
+    } finally {
+      setLoading(false);
+    }
   };
-
-  if (!isMounted) return null;
 
   return (
     <div className="min-h-screen bg-slate-950 p-6 text-white">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Sustainability Command Center</h1>
-          <p className="text-sm text-slate-400">
-            Real-time platform overview across carbon accounting, satellite GIS scans, and solar energy generation
-          </p>
+      <div className="mx-auto max-w-6xl space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-white">Carbon Footprint Calculator</h1>
+            <p className="text-sm text-slate-400">
+              Calculate and visualize Scope 1, Scope 2 & Scope 3 GHG Emissions
+            </p>
+          </div>
+
+          {/* Trigger to open the Video Form Modal */}
+          <button
+            onClick={() => setShowVideoModal(true)}
+            className="rounded-lg border border-emerald-500 bg-emerald-500/10 px-4 py-2 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/20 transition"
+          >
+            Open Video Form
+          </button>
         </div>
 
-        {/* Top Metric Cards */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-xl border border-slate-800 bg-slate-900 p-5 space-y-1">
-            <p className="text-xs text-slate-400">Annual Gross Emissions</p>
-            <p className="text-2xl font-bold text-red-400">
-              1,250 <span className="text-sm font-normal text-slate-300">t CO₂e</span>
-            </p>
-            <p className="text-[10px] text-slate-500">Scope 1, 2 & 3 Calculated</p>
-          </div>
-
-          <div className="rounded-xl border border-slate-800 bg-slate-900 p-5 space-y-1">
-            <p className="text-xs text-slate-400">Clean Solar Power Potential</p>
-            <p className="text-2xl font-bold text-amber-400">
-              722,700 <span className="text-sm font-normal text-slate-300">kWh/yr</span>
-            </p>
-            <p className="text-[10px] text-slate-500">Est. 1,200 m² Rooftop Area</p>
-          </div>
-
-          <div className="rounded-xl border border-slate-800 bg-slate-900 p-5 space-y-1">
-            <p className="text-xs text-slate-400">Satellite EIA Green Cover</p>
-            <p className="text-2xl font-bold text-emerald-400">
-              21.9% <span className="text-sm font-normal text-slate-300">NDGI</span>
-            </p>
-            <p className="text-[10px] text-slate-500">849.2 t CO₂ Absorption/yr</p>
-          </div>
-
-          <div className="rounded-xl border border-slate-800 bg-slate-900 p-5 space-y-1">
-            <p className="text-xs text-slate-400">Simulated Offsets</p>
-            <p className="text-2xl font-bold text-sky-400">
-              490 <span className="text-sm font-normal text-slate-300">t CO₂e</span>
-            </p>
-            <p className="text-[10px] text-slate-500">98% Towards Net-Zero Target</p>
-          </div>
-        </div>
-
-        {/* Quick Module Navigation & Action Cards */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div className="rounded-xl border border-slate-800 bg-slate-900 p-5 space-y-4">
-            <h2 className="text-base font-semibold text-white">Active Modules</h2>
-            <div className="space-y-3">
-              <Link
-                href="/dashboard/calculator"
-                className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-950 p-3 hover:border-emerald-500 transition"
-              >
-                <div>
-                  <p className="text-sm font-semibold text-emerald-400">📊 Carbon Calculator</p>
-                  <p className="text-xs text-slate-400">Scope 1, 2, 3 footprint models and energy metrics</p>
-                </div>
-                <span className="text-xs text-slate-500">Open &rarr;</span>
-              </Link>
+          {/* Input Form */}
+          <div className="rounded-xl border border-slate-800 bg-slate-900 p-6 space-y-4">
+            <h2 className="text-lg font-semibold text-emerald-400">Activity Data</h2>
 
-              <Link
-                href="/dashboard/satellite"
-                className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-950 p-3 hover:border-emerald-500 transition"
-              >
-                <div>
-                  <p className="text-sm font-semibold text-emerald-400">🛰️ Satellite Analysis</p>
-                  <p className="text-xs text-slate-400">GIS spatial land-use scan and green coverage mapping</p>
-                </div>
-                <span className="text-xs text-slate-500">Open &rarr;</span>
-              </Link>
+            {error && (
+              <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-400">
+                {error}
+              </div>
+            )}
 
-              <Link
-                href="/dashboard/solar"
-                className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-950 p-3 hover:border-amber-500 transition"
-              >
-                <div>
-                  <p className="text-sm font-semibold text-amber-400">☀️ Solar Potential</p>
-                  <p className="text-xs text-slate-400">Rooftop capacity, utility savings and ROI payback</p>
-                </div>
-                <span className="text-xs text-slate-500">Open &rarr;</span>
-              </Link>
-
-              <Link
-                href="/dashboard/offset"
-                className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-950 p-3 hover:border-emerald-500 transition"
-              >
-                <div>
-                  <p className="text-sm font-semibold text-sky-400">🌱 Offset Simulator</p>
-                  <p className="text-xs text-slate-400">Reforestation, RECs, and credit purchase planning</p>
-                </div>
-                <span className="text-xs text-slate-500">Open &rarr;</span>
-              </Link>
-            </div>
-          </div>
-
-          {/* Environmental Summary Status */}
-          <div className="rounded-xl border border-slate-800 bg-slate-900 p-5 space-y-4">
-            <h2 className="text-base font-semibold text-white">Sustainability Progress</h2>
-            <div className="space-y-4 text-xs">
-              <div>
-                <div className="flex justify-between pb-1">
-                  <span className="text-slate-400">Net-Zero Target Progress:</span>
-                  <span className="font-bold text-emerald-400">98%</span>
-                </div>
-                <div className="h-2.5 w-full rounded-full bg-slate-950">
-                  <div className="h-2.5 rounded-full bg-emerald-500" style={{ width: "98%" }}></div>
+            <form onSubmit={handleCalculate} className="space-y-4">
+              <div className="border-b border-slate-800 pb-3">
+                <p className="text-xs font-semibold text-slate-400 mb-2">Scope 1 & 2 Emissions</p>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs text-slate-300">Monthly Grid Electricity (kWh)</label>
+                    <input
+                      type="number"
+                      required
+                      value={electricity}
+                      onChange={(e) => setElectricity(Number(e.target.value))}
+                      className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-white focus:border-emerald-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-300">Diesel Generator Usage (Liters)</label>
+                    <input
+                      type="number"
+                      required
+                      value={diesel}
+                      onChange={(e) => setDiesel(Number(e.target.value))}
+                      className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-white focus:border-emerald-500 focus:outline-none"
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <div className="flex justify-between pb-1">
-                  <span className="text-slate-400">Clean Energy Coverage:</span>
-                  <span className="font-bold text-amber-400">57.8%</span>
-                </div>
-                <div className="h-2.5 w-full rounded-full bg-slate-950">
-                  <div className="h-2.5 rounded-full bg-amber-500" style={{ width: "57.8%" }}></div>
-                </div>
-              </div>
-
-              <div className="rounded-lg border border-slate-800 bg-slate-950 p-4 space-y-2 mt-4">
-                <p className="text-xs font-semibold text-slate-300">System Integration Status</p>
-                <div className="flex items-center justify-between text-slate-400">
-                  <span>FastAPI Backend Engine</span>
-                  <span className="text-emerald-400 font-bold">● Connected</span>
-                </div>
-                <div className="flex items-center justify-between text-slate-400">
-                  <span>SQLite Persistence</span>
-                  <span className="text-emerald-400 font-bold">● Connected</span>
-                </div>
-              </div>
-            </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-lg bg-emerald-600 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:opacity-50"
+              >
+                {loading ? "Computing..." : "Calculate Footprint"}
+              </button>
+            </form>
           </div>
         </div>
       </div>
+
+      {/* Video Form Modal */}
+      {showVideoModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="relative w-full max-w-2xl rounded-2xl border border-slate-800 bg-slate-900 p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="text-lg font-semibold text-white">Video Submission Form</h3>
+              <button
+                onClick={() => setShowVideoModal(false)}
+                className="text-slate-400 hover:text-white text-sm"
+              >
+                ✕ Close
+              </button>
+            </div>
+
+            {/* Embed Video Player / Video Submission Interface */}
+            <div className="aspect-video w-full rounded-xl overflow-hidden bg-slate-950 flex items-center justify-center border border-slate-800">
+              <iframe
+                className="w-full h-full"
+                src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                title="Video Form"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                setShowVideoModal(false);
+              }}
+              className="space-y-3"
+            >
+              <div>
+                <label className="block text-xs text-slate-300">Video Notes / Description</label>
+                <textarea
+                  className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none"
+                  rows={3}
+                  placeholder="Enter details regarding this video submission..."
+                ></textarea>
+              </div>
+              <button
+                type="submit"
+                className="w-full rounded-lg bg-emerald-600 py-2 text-sm font-semibold text-white hover:bg-emerald-500 transition"
+              >
+                Submit Video Response
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

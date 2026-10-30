@@ -1,7 +1,6 @@
 "use client";
-
 import { useState, useRef } from "react";
-import { api } from "@/lib/api";
+import { api } from "../../../lib/api"; // Exact relative path to src/lib/api.ts
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import {
@@ -17,6 +16,7 @@ import {
   CartesianGrid,
   Legend,
 } from "recharts";
+
 
 export default function CalculatorPage() {
   const reportRef = useRef<HTMLDivElement>(null);
@@ -39,7 +39,6 @@ export default function CalculatorPage() {
     setError("");
 
     try {
-      // Calls the Render API dynamically using api client setup
       const response = await api.post("/calculator/calculate", {
         electricity_kwh: Number(electricity),
         diesel_liters: Number(diesel),
@@ -56,7 +55,6 @@ export default function CalculatorPage() {
       setLoading(false);
     }
   };
-
   const exportCSV = () => {
     if (!result) return;
 

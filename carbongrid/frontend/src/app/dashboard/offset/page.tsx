@@ -25,25 +25,34 @@ export default function OffsetSimulatorPage() {
     setIsMounted(true);
   }, []);
 
-  const handleSimulate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  const handleCalculate = (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
+  setError("");
 
-    try {
-      const response = await axios.post("http://127.0.0.1:8000/api/v1/offset/simulate", {
-        current_emissions_tons: parseFloat(emissions) || 0,
-        reforestation_trees: parseInt(trees) || 0,
-        rec_mwh: parseFloat(rec) || 0,
-        carbon_credits_purchased: parseInt(credits) || 0,
-      });
+  try {
+    // GHG Protocol standard calculation factors
+    const scope1_kg = Number(diesel) * 2.68 + Number(vehicleKm) * 0.21;
+    const scope2_kg = Number(electricity) * 0.85;
+    const scope3_kg = Number(flightHours) * 90 + Number(commuteKm) * 0.17 + Number(wasteKg) * 0.5;
 
-      setResult(response.data);
-    } catch (err) {
-      console.error("Offset simulation error", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const total_tonnes = (scope1_kg + scope2_kg + scope3_kg) / 1000;
+
+    setResult({
+      status: "success",
+      total_emissions_tonnes: Number(total_tonnes.toFixed(2)),
+      breakdown: {
+        scope1_tonnes: Number((scope1_kg / 1000).toFixed(2)),
+        scope2_tonnes: Number((scope2_kg / 1000).toFixed(2)),
+        scope3_tonnes: Number((scope3_kg / 1000).toFixed(2)),
+      },
+    });
+  } catch (err: any) {
+    setError("Failed to process calculation.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const formatNum = (val: number) => {
     if (val === undefined || val === null) return "0";
